@@ -1,72 +1,35 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>InfoVault AI Takip Paneli</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    body {
-      background-color: #121212;
-      color: white;
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 20px;
-    }
-    h1 {
-      text-align: center;
-    }
-    .panel {
-      max-width: 600px;
-      margin: auto;
-      background: #1e1e1e;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px #00000066;
-    }
-    .entry {
-      padding: 10px;
-      border-bottom: 1px solid #333;
-    }
-    .loading {
-      text-align: center;
-      font-style: italic;
-      color: #ffcc00;
-    }
-    .error {
-      color: red;
-      text-align: center;
-      margin-top: 20px;
-    }
-  </style>
+  <title>InfoVault Otomasyon Takibi</title>
+  <meta charset="UTF-8">
 </head>
 <body>
-  <div class="panel">
-    <h1>InfoVault AI Otomasyon Paneli</h1>
-    <div id="status" class="loading">Veri yükleniyor... Lütfen bekleyin...</div>
-    <div id="log"></div>
-  </div>
+  <h1>📊 InfoVault Canlı Takip Paneli</h1>
+  <div id="log-container"></div>
 
   <script>
-    fetch("https://script.google.com/macros/s/AKfycbzt99mjC1Lc5M0__HSxK8JXRAhMplAQhUSNskt2y_0vatyUD-PiAJ3_VNtRX2siHiLhMA/exec")
-      .then(response => response.json())
-      .then(data => {
-        const status = document.getElementById("status");
-        const log = document.getElementById("log");
-        if (data.length <= 1) {
-          status.textContent = "Henüz üretim başlamadı. Beklemede...";
-          return;
-        }
-        status.style.display = "none";
-        data.slice(1).reverse().forEach(row => {
-          const entry = document.createElement("div");
-          entry.className = "entry";
-          entry.innerHTML = `<strong></strong> |  - <span style="color: '#ff3300'"></span><br>`;
-          log.appendChild(entry);
-        });
-      })
-      .catch(error => {
-        document.getElementById("status").innerHTML = `<div class='error'>Veri alınamadı. Sunucuya ulaşılamıyor.</div>`;
-        console.error("Hata:", error);
+    async function fetchLogs() {
+      const response = await fetch("https://script.google.com/macros/s/AKfycbyUTe-7Hg1sFUUY-AvCzN9m_7KjOcGb-eLCzcu0S05UmT1yvfjTsuY5RhuQTXx0Nr3LYQ/exec");
+      const data = await response.json();
+
+      let html = "<table border='1' cellpadding='5'><tr><th>ZAMAN</th><th>AŞAMA</th><th>DURUM</th><th>AÇIKLAMA</th></tr>";
+      data.forEach(row => {
+        html += `<tr>
+          <td>${new Date(row.time).toLocaleString('tr-TR')}</td>
+          <td>${row.stage}</td>
+          <td>${row.status}</td>
+          <td>${row.message}</td>
+        </tr>`;
       });
+      html += "</table>";
+
+      document.getElementById("log-container").innerHTML = html;
+    }
+
+    // İlk yükleme + her 3 saniyede bir yenile
+    fetchLogs();
+    setInterval(fetchLogs, 3000);
   </script>
 </body>
 </html>
