@@ -79,6 +79,10 @@
       cursor: pointer;
       transition: background-color 0.3s;
     }
+    .controls button.loading {
+      background-color: #cccc00 !important;
+      color: #000;
+    }
     .controls button:hover {
       background-color: #00cccc;
     }
@@ -88,6 +92,12 @@
       font-size: 14px;
       color: #aaa;
     }
+    .summary {
+      text-align: center;
+      margin-top: 30px;
+      font-size: 16px;
+      color: #00ff99;
+    }
   </style>
 </head>
 <body>
@@ -96,7 +106,7 @@
     <div id="status" class="status loading">Veriler alınıyor...</div>
 
     <div class="controls">
-      <button onclick="fetchLogs()">Verileri Yenile</button>
+      <button id="refreshBtn" onclick="manualRefresh()">Verileri Yenile</button>
       <button onclick="filterToday()">Sadece Bugünküler</button>
       <button onclick="resetFilter()">Tüm Kayıtlar</button>
     </div>
@@ -115,6 +125,7 @@
       </tbody>
     </table>
 
+    <div class="summary" id="summary"></div>
     <div class="settings">
       🔔 Panel 10 saniyede bir otomatik güncellenir. Hatalı kayıtlar kırmızı renkle gösterilir.
     </div>
@@ -122,10 +133,13 @@
 
   <script>
     let allData = [];
-    let lastSuccess = '';
 
-    async function fetchLogs() {
+    async function fetchLogs(playSound = false) {
       const statusEl = document.getElementById("status");
+      const refreshBtn = document.getElementById("refreshBtn");
+      refreshBtn.classList.add("loading");
+      refreshBtn.textContent = "Yenileniyor...";
+
       try {
         const response = await fetch("https://script.google.com/macros/s/AKfycbyEY87TRNcHwWMvFKF33L8XTQMaREJCmPGxdEBAIF_gsV57K8pvw__j1ETX6FQJMZxt/exec");
         const data = await response.json();
@@ -133,10 +147,15 @@
         statusEl.textContent = "Veriler başarıyla alındı.";
         statusEl.className = "status success";
         renderTable(data);
+        updateSummary(data);
+        if (playSound) playNotification();
       } catch (err) {
         statusEl.textContent = "Veriler alınamadı. Sunucuya ulaşılamıyor.";
         statusEl.className = "status error";
         console.error(err);
+      } finally {
+        refreshBtn.classList.remove("loading");
+        refreshBtn.textContent = "Verileri Yenile";
       }
     }
 
@@ -158,6 +177,15 @@
       });
     }
 
+    function updateSummary(data) {
+      const today = new Date().toISOString().split("T")[0];
+      const todayLogs = data.filter(row => row.time.startsWith(today));
+      const summaryEl = document.getElementById("summary");
+      const total = todayLogs.length;
+      const errors = todayLogs.filter(r => r.status.toLowerCase().includes("hata") || r.message.toLowerCase().includes("hata")).length;
+      summaryEl.textContent = `Bugün toplam ${total} kayıt var. Hatalı: ${errors}`;
+    }
+
     function filterToday() {
       const today = new Date().toISOString().split("T")[0];
       const filtered = allData.filter(row => row.time.startsWith(today));
@@ -166,6 +194,16 @@
 
     function resetFilter() {
       renderTable(allData);
+    }
+
+    function manualRefresh() {
+      fetchLogs(true);
+    }
+
+    function playNotification() {
+      const audio = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-interface-option-select-2573.mp3");
+      audio.volume = 0.3;
+      audio.play();
     }
 
     fetchLogs();
