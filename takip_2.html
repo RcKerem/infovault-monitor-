@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>InfoVault Takip Paneli</title>
+  <style>
+    body {
+      background-color: #111;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      text-align: center;
+    }
+    h1 {
+      color: #00bcd4;
+    }
+    .status-box {
+      background-color: #222;
+      border-radius: 10px;
+      padding: 15px;
+      margin: 20px auto;
+      max-width: 400px;
+      box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
+    }
+    .loading {
+      color: yellow;
+      animation: pulse 1s infinite;
+    }
+    @keyframes pulse {
+      0% { opacity: 0.2; }
+      50% { opacity: 1; }
+      100% { opacity: 0.2; }
+    }
+    .error {
+      color: red;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>InfoVault AI<br>Otomasyon Paneli</h1>
+  <div class="status-box" id="status">Yükleniyor...</div>
+
+  <script>
+    async function fetchStatus() {
+      const statusDiv = document.getElementById("status");
+      statusDiv.innerHTML = "<span class='loading'>Veriler yükleniyor...</span>";
+
+      try {
+        const response = await fetch("https://script.google.com/macros/s/AKfycbyUTe-7Hg1sFUUY-AvCzN9m_7KjOcGb-eLCzcu0S05UmT1yvfjTsuY5RhuQTXx0Nr3LYQ/exec");
+        const data = await response.json();
+
+        if (!data || data.length === 0) {
+          statusDiv.innerHTML = "<span class='error'>Henüz veri girilmedi.</span>";
+          return;
+        }
+
+        const latest = data[data.length - 1];
+
+        statusDiv.innerHTML = `
+          <strong>Son Güncelleme:</strong><br><br><br>
+          <strong>Aşama:</strong> <br>
+          <strong>Durum:</strong> <br>
+          <strong>Açıklama:</strong><br>
+        `;
+      } catch (error) {
+        statusDiv.innerHTML = "<span class='error'>Veri alınamadı. Sunucuya ulaşılamıyor.</span>";
+        console.error(error);
+      }
+    }
+
+    fetchStatus();
+    setInterval(fetchStatus, 10000); // Her 10 saniyede bir güncelle
+  </script>
+</body>
+</html>
