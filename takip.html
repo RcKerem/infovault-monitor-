@@ -39,6 +39,9 @@
       text-align: center;
       margin-top: 10px;
       font-weight: bold;
+      font-size: 16px;
+      border-radius: 12px;
+      padding: 8px 12px;
     }
     .status.loading {
       color: yellow;
@@ -46,6 +49,11 @@
     }
     .status.error {
       color: red;
+      background-color: #330000;
+    }
+    .status.success {
+      color: #00ff99;
+      background-color: #002f1f;
     }
     @keyframes blink {
       0% { opacity: 1; }
@@ -88,7 +96,7 @@
         }
 
         statusEl.textContent = "Veriler başarıyla alındı.";
-        statusEl.className = "status";
+        statusEl.className = "status success";
 
         tbody.innerHTML = "";
 
@@ -110,7 +118,7 @@
     }
 
     fetchLogs();
-    setInterval(fetchLogs, 5000); // her 5 saniyede bir yenile
+    setInterval(fetchLogs, 5000); // 5 saniyede bir yenile
   </script>
 </body>
 </html>
