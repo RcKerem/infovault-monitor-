@@ -54,7 +54,7 @@
       <h2>🔐 Giriş Yap</h2>
       <input type="password" id="passwordInput" placeholder="Şifreyi girin">
       <button onclick="checkPassword()">Giriş</button>
-      <div style="margin-top:15px; font-size:13px; color:#aaa">Varsayılan şifre: <b>1234</b></div>
+      
     </div>
   </div>
 
@@ -76,6 +76,39 @@
     }
   </script>
 
-  <!-- PANEL İÇERİĞİ BURAYA GELECEK -->
+  <!-- PANEL BAŞLANGIÇ -->
+<div class="panel">
+  <h1>InfoVault AI Otomasyon Paneli</h1>
+  <div id="status" class="status loading">Veriler alınıyor...</div>
+
+  <div class="controls">
+    <button id="refreshBtn" onclick="manualRefresh()">Verileri Yenile</button>
+    <button onclick="filterToday()">Sadece Bugünküler</button>
+    <button onclick="resetFilter()">Tüm Kayıtlar</button>
+  </div>
+
+  <table id="log-table">
+    <thead>
+      <tr>
+        <th>Zaman</th>
+        <th>Aşama</th>
+        <th>Durum</th>
+        <th>Açıklama</th>
+      </tr>
+    </thead>
+    <tbody id="log-body">
+      <tr><td colspan="4">Veri yükleniyor...</td></tr>
+    </tbody>
+  </table>
+
+  <div class="summary" id="summary"></div>
+  <canvas id="chartCanvas" style="max-width: 800px; margin: 40px auto;"></canvas>
+  <div class="settings">
+    🔔 Panel 30 saniyede bir otomatik güncellenir. Hatalı kayıtlar kırmızı renkle gösterilir.
+  </div>
+</div>
+
+<button id="soundToggle" onclick="toggleSound()">🔊 Ses açık</button>
+<!-- PANEL BİTİŞ -->
 </body>
 </html>
