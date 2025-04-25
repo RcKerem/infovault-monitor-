@@ -110,30 +110,41 @@
       font-size: 16px;
       color: #00ff99;
     }
-    #soundToggle, #musicToggle {
+    .music-player {
       position: fixed;
-      left: 20px;
-      background-color: #333;
-      border: none;
-      color: #fff;
-      padding: 8px 14px;
-      border-radius: 10px;
-      font-size: 13px;
-      cursor: pointer;
-      width: 150px;
-    }
-    #soundToggle {
-      bottom: 70px;
-    }
-    #musicToggle {
       bottom: 20px;
+      left: 20px;
+      background: rgba(34, 34, 34, 0.8);
+      backdrop-filter: blur(8px);
+      padding: 15px 20px;
+      border-radius: 15px;
+      box-shadow: 0 0 10px #00ffff;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      z-index: 999;
+    }
+    .music-player button {
+      background: none;
+      border: none;
+      color: #00ffff;
+      font-size: 24px;
+      cursor: pointer;
+    }
+    .music-player input[type=range] {
+      width: 100px;
     }
   </style>
 </head>
 <body>
   <audio id="bgMusic" loop>
-    <source src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_534896690c.mp3?filename=calm-piano-ambient-11474.mp3" type="audio/mpeg">
+    <source src="https://rckerem.github.io/infovault-monitor-/music100.mp3" type="audio/mpeg">
   </audio>
+
+  <div class="music-player">
+    <button id="playPauseBtn">▶️</button>
+    <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="0.5">
+  </div>
 
   <div class="panel">
     <h1>InfoVault AI Otomasyon Paneli</h1>
@@ -166,47 +177,29 @@
     </div>
   </div>
 
-  <button id="soundToggle" onclick="toggleSound()">🔊 Bildirim Sesi Açık</button>
-  <button id="musicToggle" onclick="toggleMusic()">🎵 Müzik Açık</button>
-
   <script>
-    let allData = [];
-    let intervalId;
-    let soundEnabled = localStorage.getItem("soundEnabled") !== "false";
-    let musicEnabled = localStorage.getItem("musicEnabled") !== "false";
     const bgMusic = document.getElementById("bgMusic");
+    const playPauseBtn = document.getElementById("playPauseBtn");
+    const volumeSlider = document.getElementById("volumeSlider");
 
-    const soundToggleBtn = document.getElementById("soundToggle");
-    const musicToggleBtn = document.getElementById("musicToggle");
-    updateSoundButton();
-    updateMusicButton();
-
-    function toggleSound() {
-      soundEnabled = !soundEnabled;
-      localStorage.setItem("soundEnabled", soundEnabled);
-      updateSoundButton();
-    }
-
-    function updateSoundButton() {
-      soundToggleBtn.textContent = soundEnabled ? "🔊 Bildirim Sesi Açık" : "🔇 Bildirim Sesi Kapalı";
-    }
-
-    function toggleMusic() {
-      musicEnabled = !musicEnabled;
-      localStorage.setItem("musicEnabled", musicEnabled);
-      updateMusicButton();
-      if (musicEnabled) {
+    playPauseBtn.addEventListener("click", () => {
+      if (bgMusic.paused) {
         bgMusic.play();
+        playPauseBtn.textContent = "⏸️";
       } else {
         bgMusic.pause();
+        playPauseBtn.textContent = "▶️";
       }
-    }
+    });
 
-    function updateMusicButton() {
-      musicToggleBtn.textContent = musicEnabled ? "🎵 Müzik Açık" : "🔇 Müzik Kapalı";
-      if (!musicEnabled) bgMusic.pause();
-      else bgMusic.play();
-    }
+    volumeSlider.addEventListener("input", () => {
+      bgMusic.volume = volumeSlider.value;
+    });
+
+    bgMusic.volume = 0.5;
+
+    let allData = [];
+    let intervalId;
 
     async function fetchLogs(playSound = false) {
       const statusEl = document.getElementById("status");
@@ -224,7 +217,6 @@
         renderTable(data);
         updateSummary(data);
         updateChart(data);
-        if (playSound && soundEnabled) playNotification();
       } catch (err) {
         statusEl.textContent = "Veriler alınamadı. Sunucuya ulaşılamıyor.";
         statusEl.className = "status error";
@@ -305,12 +297,6 @@
 
     function manualRefresh() {
       fetchLogs(true);
-    }
-
-    function playNotification() {
-      const audio = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-interface-option-select-2573.mp3");
-      audio.volume = 0.3;
-      audio.play();
     }
 
     function startAutoRefresh() {
