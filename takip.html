@@ -43,7 +43,7 @@
       font-size: 16px;
       border-radius: 12px;
       padding: 8px 12px;
-      transition: opacity 1s ease;
+      transition: opacity 2s ease;
     }
     .status.loading {
       color: yellow;
@@ -100,10 +100,9 @@
       font-size: 16px;
       color: #00ff99;
     }
-    #soundToggle {
+    #soundToggle, #musicToggle {
       position: fixed;
       bottom: 20px;
-      left: 20px;
       background-color: #333;
       border: none;
       color: #fff;
@@ -112,9 +111,15 @@
       font-size: 13px;
       cursor: pointer;
     }
+    #soundToggle { left: 20px; }
+    #musicToggle { left: 140px; }
   </style>
 </head>
 <body>
+  <audio id="bgMusic" loop autoplay volume="0.05">
+    <source src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_534896690c.mp3?filename=calm-piano-ambient-11474.mp3" type="audio/mpeg">
+  </audio>
+
   <div class="panel">
     <h1>InfoVault AI Otomasyon Paneli</h1>
     <div id="status" class="status loading">Veriler alınıyor...</div>
@@ -146,6 +151,159 @@
     </div>
   </div>
 
-  <button id="soundToggle" onclick="toggleSound()">🔊 Ses açık</button>
+  <button id="soundToggle" onclick="toggleSound()">🔊 Bildirim Sesi Açık</button>
+  <button id="musicToggle" onclick="toggleMusic()">🎵 Müzik Açık</button>
+
+  <script>
+    let allData = [];
+    let intervalId;
+    let soundEnabled = localStorage.getItem("soundEnabled") !== "false";
+    let musicEnabled = localStorage.getItem("musicEnabled") !== "false";
+    const bgMusic = document.getElementById("bgMusic");
+
+    const soundToggleBtn = document.getElementById("soundToggle");
+    const musicToggleBtn = document.getElementById("musicToggle");
+    updateSoundButton();
+    updateMusicButton();
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      localStorage.setItem("soundEnabled", soundEnabled);
+      updateSoundButton();
+    }
+
+    function updateSoundButton() {
+      soundToggleBtn.textContent = soundEnabled ? "🔊 Bildirim Sesi Açık" : "🔇 Bildirim Sesi Kapalı";
+    }
+
+    function toggleMusic() {
+      musicEnabled = !musicEnabled;
+      localStorage.setItem("musicEnabled", musicEnabled);
+      updateMusicButton();
+      if (musicEnabled) {
+        bgMusic.play();
+      } else {
+        bgMusic.pause();
+      }
+    }
+
+    function updateMusicButton() {
+      musicToggleBtn.textContent = musicEnabled ? "🎵 Müzik Açık" : "🔇 Müzik Kapalı";
+      if (!musicEnabled) bgMusic.pause();
+    }
+
+    async function fetchLogs(playSound = false) {
+      const statusEl = document.getElementById("status");
+      const refreshBtn = document.getElementById("refreshBtn");
+      refreshBtn.classList.add("loading");
+      refreshBtn.textContent = "Yenileniyor...";
+
+      try {
+        const response = await fetch("https://script.google.com/macros/s/AKfycbyEY87TRNcHwWMvFKF33L8XTQMaREJCmPGxdEBAIF_gsV57K8pvw__j1ETX6FQJMZxt/exec");
+        const data = await response.json();
+        allData = data;
+        statusEl.textContent = "Veriler başarıyla alındı.";
+        statusEl.className = "status success";
+        setTimeout(() => statusEl.style.opacity = 0, 3000);
+        renderTable(data);
+        updateSummary(data);
+        updateChart(data);
+        if (playSound && soundEnabled) playNotification();
+      } catch (err) {
+        statusEl.textContent = "Veriler alınamadı. Sunucuya ulaşılamıyor.";
+        statusEl.className = "status error";
+        console.error(err);
+      } finally {
+        refreshBtn.classList.remove("loading");
+        refreshBtn.textContent = "Verileri Yenile";
+      }
+    }
+
+    function renderTable(data) {
+      const tbody = document.getElementById("log-body");
+      tbody.innerHTML = "";
+
+      data.slice().reverse().forEach(row => {
+        const tr = document.createElement("tr");
+        const isError = row.status.toLowerCase().includes("hata") || row.message.toLowerCase().includes("hata");
+        tr.className = isError ? "error-row" : "";
+        tr.innerHTML = `
+          <td>${new Date(row.time).toLocaleString('tr-TR')}</td>
+          <td>${row.stage}</td>
+          <td>${row.status}</td>
+          <td>${row.message}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function updateSummary(data) {
+      const today = new Date().toISOString().split("T")[0];
+      const todayLogs = data.filter(row => row.time.startsWith(today));
+      const summaryEl = document.getElementById("summary");
+      const total = todayLogs.length;
+      const errors = todayLogs.filter(r => r.status.toLowerCase().includes("hata") || r.message.toLowerCase().includes("hata")).length;
+      summaryEl.textContent = `Bugün toplam ${total} kayıt var. Hatalı: ${errors}`;
+    }
+
+    function updateChart(data) {
+      const ctx = document.getElementById("chartCanvas").getContext("2d");
+      const dailyCounts = {};
+      data.forEach(row => {
+        const date = row.time.split("T")[0];
+        dailyCounts[date] = (dailyCounts[date] || 0) + 1;
+      });
+      const labels = Object.keys(dailyCounts);
+      const counts = Object.values(dailyCounts);
+
+      if (window.chartInstance) window.chartInstance.destroy();
+      window.chartInstance = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: labels,
+          datasets: [{
+            label: "Günlük Kayıt Sayısı",
+            data: counts,
+            backgroundColor: "#00ffff"
+          }]
+        },
+        options: {
+          scales: {
+            y: { beginAtZero: true }
+          }
+        }
+      });
+    }
+
+    function filterToday() {
+      clearInterval(intervalId);
+      const today = new Date().toISOString().split("T")[0];
+      const filtered = allData.filter(row => row.time.startsWith(today));
+      renderTable(filtered);
+    }
+
+    function resetFilter() {
+      startAutoRefresh();
+      renderTable(allData);
+    }
+
+    function manualRefresh() {
+      fetchLogs(true);
+    }
+
+    function playNotification() {
+      const audio = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-interface-option-select-2573.mp3");
+      audio.volume = 0.3;
+      audio.play();
+    }
+
+    function startAutoRefresh() {
+      clearInterval(intervalId);
+      intervalId = setInterval(fetchLogs, 30000);
+    }
+
+    fetchLogs();
+    startAutoRefresh();
+  </script>
 </body>
 </html>
