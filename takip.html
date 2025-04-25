@@ -1,35 +1,92 @@
 <!DOCTYPE html>
-<html>
+<html lang="tr">
 <head>
-  <title>InfoVault Otomasyon Takibi</title>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <title>InfoVault AI Otomasyon Paneli</title>
+  <style>
+    body {
+      background-color: #111;
+      color: #eee;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    .panel {
+      background-color: #222;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 0 10px #000;
+      max-width: 800px;
+      margin: auto;
+    }
+    h1 {
+      color: #00ffff;
+      text-align: center;
+    }
+    table {
+      width: 100%;
+      margin-top: 20px;
+      border-collapse: collapse;
+    }
+    th, td {
+      border: 1px solid #444;
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background-color: #333;
+    }
+  </style>
 </head>
 <body>
-  <h1>📊 InfoVault Canlı Takip Paneli</h1>
-  <div id="log-container"></div>
+  <div class="panel">
+    <h1>InfoVault AI Otomasyon Paneli</h1>
+    <table id="log-table">
+      <thead>
+        <tr>
+          <th>Zaman</th>
+          <th>Aşama</th>
+          <th>Durum</th>
+          <th>Açıklama</th>
+        </tr>
+      </thead>
+      <tbody id="log-body">
+        <tr><td colspan="4">Veri yükleniyor...</td></tr>
+      </tbody>
+    </table>
+  </div>
 
   <script>
     async function fetchLogs() {
-      const response = await fetch("https://script.google.com/macros/s/AKfycbyUTe-7Hg1sFUUY-AvCzN9m_7KjOcGb-eLCzcu0S05UmT1yvfjTsuY5RhuQTXx0Nr3LYQ/exec");
-      const data = await response.json();
+      try {
+        const response = await fetch("https://script.google.com/macros/s/AKfycbyUTe-7Hg1sFUUY-AvCzN9m_7KjOcGb-eLCzcu0S05UmT1yvfjTsuY5RhuQTXx0Nr3LYQ/exec");
+        const data = await response.json();
+        const tbody = document.getElementById("log-body");
 
-      let html = "<table border='1' cellpadding='5'><tr><th>ZAMAN</th><th>AŞAMA</th><th>DURUM</th><th>AÇIKLAMA</th></tr>";
-      data.forEach(row => {
-        html += `<tr>
-          <td>${new Date(row.time).toLocaleString('tr-TR')}</td>
-          <td>${row.stage}</td>
-          <td>${row.status}</td>
-          <td>${row.message}</td>
-        </tr>`;
-      });
-      html += "</table>";
+        if (!Array.isArray(data)) {
+          tbody.innerHTML = "<tr><td colspan='4'>Veri okunamadı!</td></tr>";
+          return;
+        }
 
-      document.getElementById("log-container").innerHTML = html;
+        tbody.innerHTML = "";
+
+        data.slice().reverse().forEach(row => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${new Date(row.time).toLocaleString('tr-TR')}</td>
+            <td>${row.stage}</td>
+            <td>${row.status}</td>
+            <td>${row.message}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        document.getElementById("log-body").innerHTML = "<tr><td colspan='4'>Sunucu hatası!</td></tr>";
+        console.error(err);
+      }
     }
 
-    // İlk yükleme + her 3 saniyede bir yenile
     fetchLogs();
-    setInterval(fetchLogs, 3000);
+    setInterval(fetchLogs, 5000); // her 5 saniyede bir yenile
   </script>
 </body>
 </html>
