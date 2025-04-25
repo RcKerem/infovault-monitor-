@@ -35,11 +35,29 @@
     th {
       background-color: #333;
     }
+    .status {
+      text-align: center;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    .status.loading {
+      color: yellow;
+      animation: blink 1s infinite;
+    }
+    .status.error {
+      color: red;
+    }
+    @keyframes blink {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
   </style>
 </head>
 <body>
   <div class="panel">
     <h1>InfoVault AI Otomasyon Paneli</h1>
+    <div id="status" class="status loading">Veriler alınıyor...</div>
     <table id="log-table">
       <thead>
         <tr>
@@ -57,15 +75,20 @@
 
   <script>
     async function fetchLogs() {
+      const statusEl = document.getElementById("status");
       try {
         const response = await fetch("https://script.google.com/macros/s/AKfycbyUTe-7Hg1sFUUY-AvCzN9m_7KjOcGb-eLCzcu0S05UmT1yvfjTsuY5RhuQTXx0Nr3LYQ/exec");
         const data = await response.json();
         const tbody = document.getElementById("log-body");
 
         if (!Array.isArray(data)) {
-          tbody.innerHTML = "<tr><td colspan='4'>Veri okunamadı!</td></tr>";
+          statusEl.textContent = "Veri okunamadı!";
+          statusEl.className = "status error";
           return;
         }
+
+        statusEl.textContent = "Veriler başarıyla alındı.";
+        statusEl.className = "status";
 
         tbody.innerHTML = "";
 
@@ -80,7 +103,8 @@
           tbody.appendChild(tr);
         });
       } catch (err) {
-        document.getElementById("log-body").innerHTML = "<tr><td colspan='4'>Sunucu hatası!</td></tr>";
+        statusEl.textContent = "Veriler alınamadı. Sunucuya ulaşılamıyor.";
+        statusEl.className = "status error";
         console.error(err);
       }
     }
