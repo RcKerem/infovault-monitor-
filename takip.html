@@ -11,104 +11,141 @@
       font-family: Arial, sans-serif;
       padding: 20px;
     }
-    #login-overlay {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: #111;
-      z-index: 9999;
+    .panel {
+      background-color: #222;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 0 10px #000;
+      max-width: 1000px;
+      margin: auto;
     }
-    #login-box {
-      background: #222;
-      padding: 30px;
-      border-radius: 12px;
+    h1 {
+      color: #00ffff;
       text-align: center;
-      color: #eee;
-      box-shadow: 0 0 20px #000;
     }
-    #login-box input {
-      padding: 10px;
-      margin: 10px 0;
+    table {
       width: 100%;
-      border-radius: 8px;
-      border: none;
-      font-size: 16px;
+      margin-top: 20px;
+      border-collapse: collapse;
     }
-    #login-box button {
+    th, td {
+      border: 1px solid #444;
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background-color: #333;
+    }
+    .status {
+      text-align: center;
+      margin-top: 10px;
+      font-weight: bold;
+      font-size: 16px;
+      border-radius: 12px;
+      padding: 8px 12px;
+      transition: opacity 1s ease;
+    }
+    .status.loading {
+      color: yellow;
+      animation: blink 1s infinite;
+    }
+    .status.error {
+      color: red;
+      background-color: #330000;
+    }
+    .status.success {
+      color: #00ff99;
+      background-color: #002f1f;
+    }
+    .error-row {
+      background-color: #3a0000;
+      color: #ffaaaa;
+    }
+    @keyframes blink {
+      0% { opacity: 1; }
+      50% { opacity: 0.4; }
+      100% { opacity: 1; }
+    }
+    .controls {
+      text-align: center;
+      margin-top: 20px;
+    }
+    .controls button {
       background-color: #00ffff;
       border: none;
       color: #000;
       padding: 10px 20px;
+      margin: 5px;
       border-radius: 8px;
       font-weight: bold;
       cursor: pointer;
-      margin-top: 10px;
+      transition: background-color 0.3s;
+    }
+    .controls button.loading {
+      background-color: #cccc00 !important;
+      color: #000;
+    }
+    .controls button:hover {
+      background-color: #00cccc;
+    }
+    .settings {
+      text-align: center;
+      margin-top: 30px;
+      font-size: 14px;
+      color: #aaa;
+    }
+    .summary {
+      text-align: center;
+      margin-top: 30px;
+      font-size: 16px;
+      color: #00ff99;
+    }
+    #soundToggle {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      background-color: #333;
+      border: none;
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      cursor: pointer;
     }
   </style>
 </head>
-<body onload="initPanel()">
-  <div id="login-overlay">
-    <div id="login-box">
-      <h2>🔐 Giriş Yap</h2>
-      <input type="password" id="passwordInput" placeholder="Şifreyi girin">
-      <button onclick="checkPassword()">Giriş</button>
-      
+<body>
+  <div class="panel">
+    <h1>InfoVault AI Otomasyon Paneli</h1>
+    <div id="status" class="status loading">Veriler alınıyor...</div>
+
+    <div class="controls">
+      <button id="refreshBtn" onclick="manualRefresh()">Verileri Yenile</button>
+      <button onclick="filterToday()">Sadece Bugünküler</button>
+      <button onclick="resetFilter()">Tüm Kayıtlar</button>
+    </div>
+
+    <table id="log-table">
+      <thead>
+        <tr>
+          <th>Zaman</th>
+          <th>Aşama</th>
+          <th>Durum</th>
+          <th>Açıklama</th>
+        </tr>
+      </thead>
+      <tbody id="log-body">
+        <tr><td colspan="4">Veri yükleniyor...</td></tr>
+      </tbody>
+    </table>
+
+    <div class="summary" id="summary"></div>
+    <canvas id="chartCanvas" style="max-width: 800px; margin: 40px auto;"></canvas>
+    <div class="settings">
+      🔔 Panel 30 saniyede bir otomatik güncellenir. Hatalı kayıtlar kırmızı renkle gösterilir.
     </div>
   </div>
 
-  <script>
-    function initPanel() {
-      document.body.style.display = "block";
-    }
-
-    const defaultPassword = "1234";
-    let savedPassword = localStorage.getItem("panelPassword") || defaultPassword;
-
-    function checkPassword() {
-      const entered = document.getElementById("passwordInput").value;
-      if (entered === savedPassword) {
-        document.getElementById("login-overlay").style.display = "none";
-      } else {
-        alert("Hatalı şifre!");
-      }
-    }
-  </script>
-
-  <!-- PANEL BAŞLANGIÇ -->
-<div class="panel">
-  <h1>InfoVault AI Otomasyon Paneli</h1>
-  <div id="status" class="status loading">Veriler alınıyor...</div>
-
-  <div class="controls">
-    <button id="refreshBtn" onclick="manualRefresh()">Verileri Yenile</button>
-    <button onclick="filterToday()">Sadece Bugünküler</button>
-    <button onclick="resetFilter()">Tüm Kayıtlar</button>
-  </div>
-
-  <table id="log-table">
-    <thead>
-      <tr>
-        <th>Zaman</th>
-        <th>Aşama</th>
-        <th>Durum</th>
-        <th>Açıklama</th>
-      </tr>
-    </thead>
-    <tbody id="log-body">
-      <tr><td colspan="4">Veri yükleniyor...</td></tr>
-    </tbody>
-  </table>
-
-  <div class="summary" id="summary"></div>
-  <canvas id="chartCanvas" style="max-width: 800px; margin: 40px auto;"></canvas>
-  <div class="settings">
-    🔔 Panel 30 saniyede bir otomatik güncellenir. Hatalı kayıtlar kırmızı renkle gösterilir.
-  </div>
-</div>
-
-<button id="soundToggle" onclick="toggleSound()">🔊 Ses açık</button>
-<!-- PANEL BİTİŞ -->
+  <button id="soundToggle" onclick="toggleSound()">🔊 Ses açık</button>
 </body>
 </html>
