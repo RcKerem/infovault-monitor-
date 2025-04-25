@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>InfoVault AI Otomasyon Paneli</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
       background-color: #111;
@@ -98,6 +99,18 @@
       font-size: 16px;
       color: #00ff99;
     }
+    #soundToggle {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      background-color: #333;
+      border: none;
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -126,13 +139,31 @@
     </table>
 
     <div class="summary" id="summary"></div>
+    <canvas id="chartCanvas" style="max-width: 800px; margin: 40px auto;"></canvas>
     <div class="settings">
       🔔 Panel 10 saniyede bir otomatik güncellenir. Hatalı kayıtlar kırmızı renkle gösterilir.
     </div>
   </div>
 
+  <button id="soundToggle" onclick="toggleSound()">🔊 Ses açık</button>
+
   <script>
     let allData = [];
+    let intervalId;
+    let soundEnabled = localStorage.getItem("soundEnabled") !== "false";
+
+    const soundToggleBtn = document.getElementById("soundToggle");
+    updateSoundButton();
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      localStorage.setItem("soundEnabled", soundEnabled);
+      updateSoundButton();
+    }
+
+    function updateSoundButton() {
+      soundToggleBtn.textContent = soundEnabled ? "🔊 Ses açık" : "🔇 Ses kapalı";
+    }
 
     async function fetchLogs(playSound = false) {
       const statusEl = document.getElementById("status");
@@ -148,7 +179,8 @@
         statusEl.className = "status success";
         renderTable(data);
         updateSummary(data);
-        if (playSound) playNotification();
+        updateChart(data);
+        if (playSound && soundEnabled) playNotification();
       } catch (err) {
         statusEl.textContent = "Veriler alınamadı. Sunucuya ulaşılamıyor.";
         statusEl.className = "status error";
@@ -186,13 +218,44 @@
       summaryEl.textContent = `Bugün toplam ${total} kayıt var. Hatalı: ${errors}`;
     }
 
+    function updateChart(data) {
+      const ctx = document.getElementById("chartCanvas").getContext("2d");
+      const dailyCounts = {};
+      data.forEach(row => {
+        const date = row.time.split("T")[0];
+        dailyCounts[date] = (dailyCounts[date] || 0) + 1;
+      });
+      const labels = Object.keys(dailyCounts);
+      const counts = Object.values(dailyCounts);
+
+      if (window.chartInstance) window.chartInstance.destroy();
+      window.chartInstance = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: labels,
+          datasets: [{
+            label: "Günlük Kayıt Sayısı",
+            data: counts,
+            backgroundColor: "#00ffff"
+          }]
+        },
+        options: {
+          scales: {
+            y: { beginAtZero: true }
+          }
+        }
+      });
+    }
+
     function filterToday() {
+      clearInterval(intervalId);
       const today = new Date().toISOString().split("T")[0];
       const filtered = allData.filter(row => row.time.startsWith(today));
       renderTable(filtered);
     }
 
     function resetFilter() {
+      startAutoRefresh();
       renderTable(allData);
     }
 
@@ -206,8 +269,13 @@
       audio.play();
     }
 
+    function startAutoRefresh() {
+      clearInterval(intervalId);
+      intervalId = setInterval(fetchLogs, 10000);
+    }
+
     fetchLogs();
-    setInterval(fetchLogs, 10000); // 10 saniyede bir yenile
+    startAutoRefresh();
   </script>
 </body>
 </html>
