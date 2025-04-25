@@ -10,7 +10,6 @@
       color: #eee;
       font-family: Arial, sans-serif;
       padding: 20px;
-      display: none;
     }
     #login-overlay {
       display: flex;
@@ -49,7 +48,7 @@
     }
   </style>
 </head>
-<body>
+<body onload="initPanel()">
   <div id="login-overlay">
     <div id="login-box">
       <h2>🔐 Giriş Yap</h2>
@@ -60,6 +59,10 @@
   </div>
 
   <script>
+    function initPanel() {
+      document.body.style.display = "block";
+    }
+
     const defaultPassword = "1234";
     let savedPassword = localStorage.getItem("panelPassword") || defaultPassword;
 
@@ -67,14 +70,12 @@
       const entered = document.getElementById("passwordInput").value;
       if (entered === savedPassword) {
         document.getElementById("login-overlay").style.display = "none";
-        document.body.style.display = "block";
       } else {
         alert("Hatalı şifre!");
       }
     }
   </script>
 
-  <!-- BURADAN İTİBAREN ANA PANEL YÜKLENİR -->
-  <!-- SON YAPTIĞIM KODUN DEVAMI BURAYA GELECEK (tam kodu daha önce hazırladık, bu sadece şifreli giriş entegresi) -->
+  <!-- PANEL İÇERİĞİ BURAYA GELECEK -->
 </body>
 </html>
